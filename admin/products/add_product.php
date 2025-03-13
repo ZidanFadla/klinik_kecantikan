@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Simpan ke database
     $stmt = $conn->prepare("INSERT INTO products (name, price, stock, image, category, model_3D) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sdisss", $name, $price, $stock, $image, $category, $modelPath);
+    $stmt->bind_param("ssisss", $name, $category, $price, $stock, $imagePath, $modelPath);
 
     if ($stmt->execute()) {
         header("Location: ../dashboard.php");

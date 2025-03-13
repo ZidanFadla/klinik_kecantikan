@@ -1,0 +1,3 @@
+AddType model/gltf+json .gltf
+AddType model/gltf-binary .glb
+AddType application/octet-stream .bin

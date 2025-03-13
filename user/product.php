@@ -9,7 +9,7 @@ include '../assets/db/database.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 
 <body>
@@ -75,13 +75,16 @@ include '../assets/db/database.php';
                                     <img src="../uploads/<?= htmlspecialchars($product['image']) ?>"
                                         alt="<?= htmlspecialchars($product['name']) ?>"
                                         class="w-full h-48 object-cover">
+                                    <pre><?= htmlspecialchars($product['model_3D']) ?></pre>
+                                    <p>Full model path: /ProjectSBD/<?= htmlspecialchars($product['model_3D']) ?></p>
                                     <?php if (!empty($product['model_3D'])): ?>
                                         <model-viewer
-                                            src="http://localhost/Project%20SBD/<?= htmlspecialchars($product['model_3D']) ?>"
+                                            src="/ProjectSBD/<?= htmlspecialchars($product['model_3D']) ?>"
+                                            type="model/gltf+json"
                                             alt="<?= htmlspecialchars($product['name']) ?>"
                                             auto-rotate
                                             camera-controls
-                                            style="width: 100%; height: 500px; background-color: #eee;
+                                            style="width: 100%; height: 500px; background-color: #eee;">
                                         </model-viewer>
 
                                     <?php endif; ?>
