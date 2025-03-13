@@ -9,6 +9,7 @@ include '../assets/db/database.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 
 <body>
@@ -33,29 +34,31 @@ include '../assets/db/database.php';
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <?php
                         $query = "SELECT 
-                            products.id, 
-                            products.name, 
-                            products.category, 
-                            products.price, 
-                            products.stock, 
-                            products.image, 
-                            promos.discount, 
-                            promos.valid_until
-                        FROM 
-                            products
-                        LEFT JOIN 
-                            promos 
-                        ON 
-                            products.category = promos.category COLLATE utf8mb4_general_ci 
-                        WHERE 
-                            promos.valid_until >= CURDATE() 
-                            OR promos.category IS NULL
-                        ORDER BY 
-                            CASE 
-                                WHEN promos.discount IS NOT NULL THEN 1 
-                                ELSE 0 
-                            END DESC, 
-                            promos.discount DESC";
+                        products.id, 
+                        products.name, 
+                        products.category, 
+                        products.price, 
+                        products.stock, 
+                        products.image, 
+                        products.model_3D,
+                        promos.discount, 
+                        promos.valid_until
+                    FROM 
+                        products
+                    LEFT JOIN 
+                        promos 
+                    ON 
+                        products.category = promos.category COLLATE utf8mb4_general_ci 
+                    WHERE 
+                        promos.valid_until >= CURDATE() 
+                        OR promos.category IS NULL
+                    ORDER BY 
+                        CASE 
+                            WHEN promos.discount IS NOT NULL THEN 1 
+                            ELSE 0 
+                        END DESC, 
+                        promos.discount DESC";
+
 
                         $result = $conn->query($query);
 
@@ -72,6 +75,16 @@ include '../assets/db/database.php';
                                     <img src="../uploads/<?= htmlspecialchars($product['image']) ?>"
                                         alt="<?= htmlspecialchars($product['name']) ?>"
                                         class="w-full h-48 object-cover">
+                                    <?php if (!empty($product['model_3D'])): ?>
+                                        <model-viewer
+                                            src="http://localhost/Project%20SBD/<?= htmlspecialchars($product['model_3D']) ?>"
+                                            alt="<?= htmlspecialchars($product['name']) ?>"
+                                            auto-rotate
+                                            camera-controls
+                                            style="width: 100%; height: 500px; background-color: #eee;
+                                        </model-viewer>
+
+                                    <?php endif; ?>
                                     <?php if ($isPromoValid): ?>
                                         <span class="absolute top-4 left-4 bg-gradient-to-r from-blue-400 to-blue-600 text-white py-1 px-3 rounded-full text-sm">
                                             Diskon <?= $product['discount'] ?>%

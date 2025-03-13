@@ -1,6 +1,6 @@
 <?php
-include('../../assets/db/database.php'); 
-include('../../auth.php'); 
+include('../../assets/db/database.php');
+include('../../auth.php');
 
 if (!isset($conn)) {
     die("Error: Koneksi database tidak tersedia. Periksa file database.php");
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         mkdir($targetDir, 0777, true);
     }
 
-    // **1. Upload Gambar Produk**
+    // Upload Gambar Produk
     if (!empty($_FILES['image']['name'])) {
         $image = basename($_FILES['image']['name']);
         $targetFile = $targetDir . $image;
@@ -29,41 +29,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // **2. Upload & Ekstrak Model 3D (ZIP)**
-    if (!empty($_FILES['model']['name'])) {
-        $zipFile = $_FILES['model']['name'];
-        $zipTmp = $_FILES['model']['tmp_name'];
+    // Upload & Ekstrak Model 3D (ZIP)
+    if (!empty($_FILES['model_zip']['name'])) {
+        $zipFile = $_FILES['model_zip']['name'];
+        $zipTmp = $_FILES['model_zip']['tmp_name'];
         $zipExt = pathinfo($zipFile, PATHINFO_EXTENSION);
-    
+
         if ($zipExt !== 'zip') {
             die("File harus berformat ZIP.");
         }
-    
+
         // Tentukan folder tujuan berdasarkan nama produk
         $modelDir = "../../uploads/models/" . preg_replace("/[^a-zA-Z0-9]/", "_", $name);
-        
+
         // Pastikan folder tujuan ada
         if (!file_exists($modelDir)) {
             mkdir($modelDir, 0777, true);
         }
-    
+
         $zipPath = $modelDir . "/" . basename($zipFile);
         move_uploaded_file($zipTmp, $zipPath);
-    
+
         // Ekstrak ZIP
         $zip = new ZipArchive;
         if ($zip->open($zipPath) === TRUE) {
             $zip->extractTo($modelDir);
             $zip->close();
-    
-            // Hapus file ZIP setelah ekstrak
-            unlink($zipPath);
-    
-            // Cek apakah scene.gltf ada
-            if (file_exists($modelDir . "/scene.gltf")) {
-                $modelPath = "uploads/models/" . basename($modelDir) . "/scene.gltf";
-            } else {
-                die("File scene.gltf tidak ditemukan dalam ZIP.");
+            unlink($zipPath); // Hapus file ZIP setelah ekstrak
+
+            // Cari .gltf secara rekursif
+            $gltfFound = false;
+            $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($modelDir));
+
+            foreach ($rii as $file) {
+                if (!$file->isDir()) {
+                    $ext = strtolower(pathinfo($file->getFilename(), PATHINFO_EXTENSION));
+                    if ($ext === 'gltf') {
+                        $relativePath = str_replace("\\", "/", str_replace("../../", "", $file->getPathname()));
+                        $modelPath = $relativePath;
+                        $gltfFound = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$gltfFound) {
+                die("File .gltf tidak ditemukan dalam ZIP.");
             }
         } else {
             die("Gagal mengekstrak ZIP.");
@@ -71,29 +82,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         $modelPath = null; // Tidak ada model 3D
     }
-    
-    // Insert data ke database
-    $stmt = $conn->prepare("INSERT INTO products (name, price, stock, image, category, 3D_model) VALUES (?, ?, ?, ?, ?, ?)");
+
+    // Simpan ke database
+    $stmt = $conn->prepare("INSERT INTO products (name, price, stock, image, category, model_3D) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("sdisss", $name, $price, $stock, $image, $category, $modelPath);
-    
+
     if ($stmt->execute()) {
         header("Location: ../dashboard.php");
         exit;
     } else {
         echo "Error: " . $stmt->error;
-    }    
+    }
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Produk</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gradient-to-r from-blue-300 via-blue-100 to-blue-300">
     <div class="min-h-screen flex items-center justify-center">
         <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-md">
@@ -120,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <input type="file" name="image" id="image" class="w-full px-4 py-2 border rounded-md">
                 </div>
                 <div class="mb-4">
-                    <label for="3d_model" class="block text-gray-700 font-semibold mb-2">Upload Model 3D (ZIP):</label>
+                    <label for="model_3D" class="block text-gray-700 font-semibold mb-2">Upload Model 3D (ZIP):</label>
                     <input type="file" name="model_zip" accept=".zip" required>
                 </div>
                 <div class="flex justify-between">
@@ -136,4 +148,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 </body>
+
 </html>
